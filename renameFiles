@@ -155,6 +155,7 @@ function renameTheFiles {
     #insert a positive number into the filename, number is incremented each time a new file follows (useful for numbering files)
     --i)
 	echo 'Inserting a number to each file name, incrementing number for the next file. Under construction';
+	echo 'Code follows';
 	;;
     #delete a sequence a characters from each file name starting with the given index
     -d)
