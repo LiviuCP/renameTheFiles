@@ -8,7 +8,7 @@
 # - replace (option -r)
 # The actual file changes are logged in a file which can be manipulated using the renameFilesLog function
 # for further details type renameFiles without arguments
-function renameFiles {
+function renameTheFiles {
     tempFile=~/.renameScriptTempFile; #file used for listing files to be renamed
     logFile=~/.renameLog; #file used for logging rename operations so they can be reviewed later
     nonNegativeInteger='^[0-9]+$'; #regex used for testing if the argument is a number
