@@ -1,0 +1,334 @@
+# This function is used for renaming a batch of files in the same time
+# It is recommended that same-format files are used, e.g. DSC-XXXX, where XXXX is a number
+# The function has 5 operating modes at the moment:
+# - prepend (option -p)
+# - append (option -a)
+# - insert (option -i)
+# - delete (option -d)
+# - replace (option -r)
+# The actual file changes are logged in a file which can be manipulated using the renameFilesLog function
+# for further details type renameFiles without arguments
+function renameFiles {
+    tempFile=~/.renameScriptTempFile; #file used for listing files to be renamed
+    logFile=~/.renameLog; #file used for logging rename operations so they can be reviewed later
+    nonNegativeInteger='^[0-9]+$'; #regex used for testing if the argument is a number
+    chmod u+w "$logFile"; #enable modification of the log file so renaming operations can be logged
+    ls  > "$tempFile"; #create in parent directory so it doesn't get mixed up with the files to be renamed (and script can be run in the directory containing the files, not in parent directory)
+    if [[ -z $1 ]]; then
+	echo;
+	echo 'Usage: ';
+	echo;
+	echo 'Option -a: append string to file name';
+	echo 'Option -p: prepend string to file name';
+	echo 'Option -i: insert string into file name';
+	echo 'Option -d: delete substring from file name';
+	echo 'Option -r: replace substring from file name';
+	echo;
+	echo 'Required arguments:';
+	echo '[-a] [string-to-append]';
+	echo '[-p] [string-to-prepend]';
+	echo '[-i] [position-of-first-inserted-character] [string-to-insert]';
+	echo '[-d] [starting-index-of-substring-to-delete] [number-of-characters-to-delete]';
+	echo '[-r] [starting-index-of-substring-to-replace] [number-of-characters-to-replace] [replacing-string]';
+	echo;
+	echo 'Note: index of first character of file name string is 0.';
+	echo;
+	return 0;
+    fi
+    newFilename='';
+    case $1 in
+    #append a sequence of characters to each file name
+    -a)
+	if [[ -z $2 ]]; then
+	    echo;
+	    echo 'FATAL ERROR! Nothing to append. Script aborted.';
+            echo;
+	    return 1;
+	else
+            echo '*********************************************' >> "$logFile";
+            echo | tee -a "$logFile";
+            date >> "$logFile";
+            pwd >> "$logFile"
+            echo >> "$logFile";
+            echo 'Renaming files by appending content...' | tee -a "$logFile";
+            echo | tee -a "$logFile";
+            while read input ; do
+		echo -n ": $input" | tee -a "$logFile";
+		newFilename="$input""$2";
+		# protect existing files from being overridden when renaming the current file
+		if [[ -e "$newFilename" ]]; then
+	            echo " ... ERROR! $newFilename already exists. Cannot rename $input." | tee -a "$logFile";
+		else
+	            mv "$input" "$newFilename";
+	            echo " ... renamed to $newFilename" | tee -a "$logFile";
+		fi
+            done < "$tempFile"
+            echo | tee -a "$logFile";
+            echo 'Renaming files by appending content finished.' | tee -a "$logFile";
+            echo | tee -a "$logFile";
+            echo >> "$logFile";
+	fi
+	;;
+    #prepend a sequence of characters to each file name
+    -p)
+	if [[ -z $2 ]]; then
+	    echo;
+	    echo 'FATAL ERROR! Nothing to prepend. Script aborted.';
+            echo;
+	    return 1;
+	else
+            echo '*********************************************' >> "$logFile";
+            echo | tee -a "$logFile";
+            date >> "$logFile";
+            pwd >> "$logFile"
+            echo >> "$logFile";
+            echo 'Renaming files by prepending content...' | tee -a "$logFile";
+            echo | tee -a "$logFile";
+            while read input ; do
+		echo -n ": $input" | tee -a "$logFile";
+		newFilename="$2""$input";
+		# protect existing files from being overridden when renaming the current file
+		if [[ -e "$newFilename" ]]; then
+	            echo " ... ERROR! $newFilename already exists. Cannot rename $input." | tee -a "$logFile";
+		else
+	            mv "$input" "$newFilename";
+	            echo " ... renamed to $newFilename" | tee -a "$logFile";
+		fi
+            done < "$tempFile"
+            echo | tee -a "$logFile";
+            echo 'Renaming files by prepending content finished.' | tee -a "$logFile";
+            echo | tee -a "$logFile";
+            echo >> "$logFile";
+	fi
+	;;
+    #insert a sequence of characters to each file name starting with the given index (all existing characters starting with this index translated right)
+    -i)
+	if [[ -z $2 ]]; then
+	    echo;
+	    echo 'FATAL ERROR! No insertion position entered. Script aborted.';
+	    echo;
+	    return 1;
+	elif ! [[ $2 =~ $nonNegativeInteger ]]; then
+	    echo;
+	    echo 'FATAL ERROR! The insertion position is not a non-negative integer number. Script aborted';
+	    echo;
+	    return 1;
+	elif [[ -z $3 ]]; then
+	    echo;
+	    echo 'FATAL ERROR! Nothing to insert. Script aborted.';
+	    echo;
+	    return 1;
+	else
+	    echo '*********************************************' >> "$logFile";
+	    echo | tee -a "$logFile";
+	    date >> "$logFile";
+	    pwd >> "$logFile"
+	    echo >> "$logFile";
+	    echo 'Renaming files by inserting content...' | tee -a "$logFile";
+	    echo | tee -a "$logFile";
+	    insertionIndex=$2;
+	    while read input; do
+		echo -n ": $input" | tee -a "$logFile";
+		#insertion index should not be higher than the one of the first character to be inserted after end of original file name string
+		length=${#input};
+		if [[ $insertionIndex -gt $length ]]; then
+	            echo " ... ERROR! Insertion index out of range. Maximum allowed: $length. Cannot rename file." | tee -a "$logFile";
+		else
+		    leftPart=${input:0:$insertionIndex};
+		    rightPart=${input:$insertionIndex};
+		    newFilename=$leftPart"$3"$rightPart;
+		    # protect existing files from being overridden when renaming the current file
+		    if [[ -e "$newFilename" ]]; then
+			echo " ... ERROR! $newFilename already exists. Cannot rename $input." | tee -a "$logFile";
+		    else
+			mv "$input" "$newFilename";
+			echo " ... renamed to $newFilename" | tee -a "$logFile";
+		    fi
+		fi
+	    done < "$tempFile"
+	    echo | tee -a "$logFile";
+	    echo 'Renaming files by inserting content finished.' | tee -a "$logFile";
+	    echo | tee -a "$logFile";
+	    echo >> "$logFile";
+	fi
+	;;
+    #delete a sequence a characters from each file name starting with the given index
+    -d)
+	if [[ -z $2 ]]; then
+	    echo;
+	    echo 'FATAL ERROR! No deletion position entered. Script aborted';
+	    echo;
+	    return 1;
+	elif ! [[ $2 =~ $nonNegativeInteger ]]; then
+	    echo;
+	    echo 'FATAL ERROR! The deletion position is not a non-negative integer number. Script aborted';
+	    echo;
+	    return 1;
+	elif [[ -z $3 ]]; then
+	    echo;
+	    echo 'FATAL ERROR! Number of characters to be deleted has not been entered. Script aborted';
+	    echo;
+	    return 1;
+	elif ! [[ $3 =~ $nonNegativeInteger ]]; then
+	    echo;
+	    echo 'FATAL ERROR! The number of characters to delete is not a non-negative integer number. Script aborted';
+	    echo;
+	    return 1;
+	else
+	    echo '*********************************************' >> "$logFile";
+	    echo | tee -a "$logFile";
+	    date >> "$logFile";
+	    pwd >> "$logFile"
+	    echo >> "$logFile";
+	    echo 'Renaming files by deleting content...' | tee -a "$logFile";
+	    echo | tee -a "$logFile";
+	    deletionIndex=$2;
+	    while read input; do
+		echo -n ": $input" | tee -a "$logFile";
+		length=${#input};
+		lastCharIndex=$(( length-1 ));
+		maxNrOfCharsToDelete=$(( length-deletionIndex )); #maximum number of characters that can be deleted starting the deletion index
+		#deletion index should not be higher than index of last character from the original string of the file name
+		if [[ $deletionIndex -gt $lastCharIndex ]]; then
+		    echo " ... ERROR! Deletion index out of range. Maximum allowed: $lastCharIndex. Cannot rename file." | tee -a "$logFile";
+		    #number of characters to be deleted should not be higher than the substring starting with the deletion index
+		elif [[ $3 -gt $maxNrOfCharsToDelete ]]; then
+		    echo " ... ERROR! You selected more characters to delete than allowed. Maximum allowed: $maxNrOfCharsToDelete. Cannot rename file." | tee -a "$logFile";
+		else
+		    leftPart=${input:0:$deletionIndex};
+		    rightPart=${input:$deletionIndex+$3};
+		    newFilename=$leftPart$rightPart;
+		    # protect existing files from being overridden when renaming the current file
+		    if [[ -e "$newFilename" ]]; then
+			echo " ... ERROR! $newFilename already exists. Cannot rename $input." | tee -a "$logFile";
+		    else
+			mv "$input" "$newFilename";
+			echo " ... renamed to $newFilename" | tee -a "$logFile";
+		    fi
+		fi
+	    done < "$tempFile"
+	    echo | tee -a "$logFile";
+	    echo 'Renaming files by deleting content finished.' | tee -a "$logFile";
+	    echo | tee -a "$logFile";
+	    echo >> "$logFile";
+	fi
+	;;
+    #replace a sequence of characters from each file name (starting with the given index) with another sequence
+    -r)
+	if [[ -z $2 ]]; then
+	    echo;
+	    echo 'FATAL ERROR! No starting position for replacement entered. Script aborted';
+	    echo;
+	    return 1;
+	elif ! [[ $2 =~ $nonNegativeInteger ]]; then
+	    echo;
+	    echo 'FATAL ERROR! The position from which replacement begins is not a non-negative integer number. Script aborted';
+	    echo;
+	    return 1;
+	elif [[ -z $3 ]]; then
+	    echo;
+	    echo 'FATAL ERROR! No number of characters to be replaced has not been entered. Script aborted';
+	    echo;
+	    return 1;
+	elif ! [[ $3 =~ $nonNegativeInteger ]]; then
+	    echo;
+	    echo 'FATAL ERROR! The number of characters to replace is not a non-negative integer number. Script aborted';
+	    echo;
+	    return 1;
+	elif [[ -z $4 ]]; then
+	    echo;
+	    echo 'FATAL ERROR! No string to be added instead of the deleted characters has been entered. Script aborted';
+	    echo;
+	    return 1;
+	else
+	    echo '*********************************************' >> "$logFile";
+	    echo | tee -a "$logFile";
+	    date >> "$logFile";
+	    pwd >> "$logFile"
+	    echo >> "$logFile";
+	    echo 'Renaming files by replacing content...' | tee -a "$logFile";
+	    echo | tee -a "$logFile";
+	    replacementIndex=$2;
+	    while read input; do
+		echo -n ": $input" | tee -a "$logFile";
+		length=${#input};
+		lastCharIndex=$(( length-1 ));
+		maxNrOfCharsToReplace=$(( length-replacementIndex )); #maximum number of characters that can be replaced starting the replacement index
+		#replacement index should not be higher than index of last character from the original string of the file name
+		if [[ $replacementIndex -gt $lastCharIndex ]]; then
+		    echo " ... ERROR! Replacement index out of range. Maximum allowed: $lastCharIndex. Cannot rename file." | tee -a "$logFile";
+		    #number of characters to be replaced should not be higher than the substring starting with the replacement index
+		elif [[ $3 -gt $maxNrOfCharsToReplace ]]; then
+		    echo " ... ERROR! You selected more characters to replace than allowed. Maximum allowed: $maxNrOfCharsToReplace. Cannot rename file." | tee -a "$logFile";
+		else
+		    leftPart=${input:0:$replacementIndex};
+		    rightPart=${input:$replacementIndex+$3};
+		    newFilename=$leftPart"$4"$rightPart;
+		    # protect existing files from being overridden when renaming the current file
+		    if [[ -e "$newFilename" ]]; then
+			echo " ... ERROR! $newFilename already exists. Cannot rename $input." | tee -a "$logFile";
+		    else
+			mv "$input" "$newFilename";
+			echo " ... renamed to $newFilename" | tee -a "$logFile";
+		    fi
+		fi
+	    done < "$tempFile"
+	    echo | tee -a "$logFile";
+	    echo 'Renaming files by replacing content finished.' | tee -a "$logFile";
+	    echo | tee -a "$logFile";
+	    echo >> "$logFile";
+	fi
+	;;
+    *)
+	echo;
+	echo 'FATAL ERROR! Invalid option selected. No such operation. Script aborted.';
+	echo;
+	return 1;
+    esac
+    rm "$tempFile";
+    chmod u-w "$logFile"; #disable changes to log file so it can not be altered by user, other programs or deleted accidentaly
+    return 0;
+}
+
+#this function manipulates the log file for renaming operations
+function renameFilesLog {
+    logFile=~/.renameLog; #file used for logging rename operations so they can be reviewed later
+    if [[ -z $1 ]]; then
+	echo;
+	echo 'Usage: ';
+	echo;
+	echo '[--flush]: delete the contents of the log file';
+	echo '[--emacs]: open the contents of the log file in EMACS (read-only)';
+	echo '[--vi]: open the contents of the log file in VI (read-only)';
+	echo;
+	return 0;
+    fi
+    case $1 in
+	--flush)
+	    # delete the contents of the log file
+	    chmod u+w "$logFile";
+	    > "$logFile";
+	    echo;
+	    echo "Contents of $logFile deleted.";
+	    echo;
+	    chmod u-w "$logFile"; #restore write protection so the file is not accidentaly modified/deleted by other scripts or by user
+	    ;;
+	--emacs)
+	    # open the contents of the log files in EMACS (read-only)
+	    open -a emacs "$logFile";
+	    echo;
+	    echo "Contents of $logFile opened in EMACS (read-only)";
+	    echo;
+	    ;;
+	--vi)
+	    # open the contents of the log file in vi (read-only)
+	    vi "$logFile";
+	    ;;
+	*)
+	    echo;
+	    echo 'FATAL ERROR! Invalid option selected. No such operation. Script aborted.';
+	    echo;
+	    return 1;
+    esac
+    return 0;
+}
