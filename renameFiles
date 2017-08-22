@@ -194,7 +194,7 @@ function renameTheFiles {
 		else
 		    leftPart=${input:0:$insertionIndex};
 		    rightPart=${input:$insertionIndex};
-		    newFilename=$leftPart"$3"$rightPart;
+		    newFilename=$leftPart"$valueToInsert"$rightPart;
 		    # protect existing files from being overridden when renaming the current file
 		    if [[ -e "$newFilename" ]]; then
 			echo " ... ERROR! $newFilename already exists. Cannot rename $input." | tee -a "$logFile";
@@ -203,6 +203,7 @@ function renameTheFiles {
 			echo " ... renamed to $newFilename" | tee -a "$logFile";
 		    fi
 		fi
+		let "valueToInsert=valueToInsert+1"; #increment value to insert no matter if actual one has been successfully inserted or not
 	    done < "$tempFile"
 	    echo | tee -a "$logFile";
 	    echo 'Renaming files by inserting content finished.' | tee -a "$logFile";
