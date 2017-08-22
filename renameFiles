@@ -169,6 +169,11 @@ function renameTheFiles {
 	    echo 'FATAL ERROR! Nothing to insert. Script aborted.';
 	    echo;
 	    return 1;
+	elif ! [[ $3 =~ $nonNegativeInteger ]]; then
+	    echo;
+	    echo 'FATAL ERROR! The content to be inserted (initial value) is not a non-negative integer number. Script aborted';
+	    echo;
+	    return 1;
 	else
 	    echo 'Inserting a number to each file name, incrementing number for the next file. Under construction';
 	    echo 'Code follows';
