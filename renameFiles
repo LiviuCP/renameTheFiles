@@ -175,12 +175,14 @@ function renameTheFiles {
 	    echo;
 	    return 1;
 	else
+	    valueToInsert=$3;
 	    echo '*********************************************' >> "$logFile";
 	    echo | tee -a "$logFile";
 	    date >> "$logFile";
 	    pwd >> "$logFile"
 	    echo >> "$logFile";
-	    echo 'Renaming files by inserting content...' | tee -a "$logFile";
+	    echo 'Renaming files by inserting numeric content and that is incremented before each new insertion...' | tee -a "$logFile";
+	    echo "Initial value: $valueToInsert" | tee -a "$logFile";
 	    echo | tee -a "$logFile";
 	    insertionIndex=$2;
 	    while read input; do
