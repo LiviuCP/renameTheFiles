@@ -154,8 +154,25 @@ function renameTheFiles {
 	;;
     #insert a positive number into the filename, number is incremented each time a new file follows (useful for numbering files)
     -I)
-	echo 'Inserting a number to each file name, incrementing number for the next file. Under construction';
-	echo 'Code follows';
+	if [[ -z $2 ]]; then
+	    echo;
+	    echo 'FATAL ERROR! No insertion position entered. Script aborted.';
+	    echo;
+	    return 1;
+	elif ! [[ $2 =~ $nonNegativeInteger ]]; then
+	    echo;
+	    echo 'FATAL ERROR! The insertion position is not a non-negative integer number. Script aborted';
+	    echo;
+	    return 1;
+	elif [[ -z $3 ]]; then
+	    echo;
+	    echo 'FATAL ERROR! Nothing to insert. Script aborted.';
+	    echo;
+	    return 1;
+	else
+	    echo 'Inserting a number to each file name, incrementing number for the next file. Under construction';
+	    echo 'Code follows';
+	fi
 	;;
     #delete a sequence a characters from each file name starting with the given index
     -d)
