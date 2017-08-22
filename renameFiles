@@ -153,7 +153,7 @@ function renameTheFiles {
 	fi
 	;;
     #insert a positive number into the filename, number is incremented each time a new file follows (useful for numbering files)
-    --i)
+    -I)
 	echo 'Inserting a number to each file name, incrementing number for the next file. Under construction';
 	echo 'Code follows';
 	;;
