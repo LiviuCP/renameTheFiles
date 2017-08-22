@@ -175,8 +175,37 @@ function renameTheFiles {
 	    echo;
 	    return 1;
 	else
-	    echo 'Inserting a number to each file name, incrementing number for the next file. Under construction';
-	    echo 'Code follows';
+	    echo '*********************************************' >> "$logFile";
+	    echo | tee -a "$logFile";
+	    date >> "$logFile";
+	    pwd >> "$logFile"
+	    echo >> "$logFile";
+	    echo 'Renaming files by inserting content...' | tee -a "$logFile";
+	    echo | tee -a "$logFile";
+	    insertionIndex=$2;
+	    while read input; do
+		echo -n ": $input" | tee -a "$logFile";
+		#insertion index should not be higher than the one of the first character to be inserted after end of original file name string
+		length=${#input};
+		if [[ $insertionIndex -gt $length ]]; then
+	            echo " ... ERROR! Insertion index out of range. Maximum allowed: $length. Cannot rename file." | tee -a "$logFile";
+		else
+		    leftPart=${input:0:$insertionIndex};
+		    rightPart=${input:$insertionIndex};
+		    newFilename=$leftPart"$3"$rightPart;
+		    # protect existing files from being overridden when renaming the current file
+		    if [[ -e "$newFilename" ]]; then
+			echo " ... ERROR! $newFilename already exists. Cannot rename $input." | tee -a "$logFile";
+		    else
+			mv "$input" "$newFilename";
+			echo " ... renamed to $newFilename" | tee -a "$logFile";
+		    fi
+		fi
+	    done < "$tempFile"
+	    echo | tee -a "$logFile";
+	    echo 'Renaming files by inserting content finished.' | tee -a "$logFile";
+	    echo | tee -a "$logFile";
+	    echo >> "$logFile";
 	fi
 	;;
     #delete a sequence a characters from each file name starting with the given index
