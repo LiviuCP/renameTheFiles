@@ -164,18 +164,18 @@ function renameTheFiles {
 	    echo 'FATAL ERROR! The insertion position is not a non-negative integer number. Script aborted';
 	    echo;
 	    return 1;
-	elif [[ -z $3 ]]; then
-	    echo;
-	    echo 'FATAL ERROR! Nothing to insert. Script aborted.';
-	    echo;
-	    return 1;
-	elif ! [[ $3 =~ $nonNegativeInteger ]]; then
+	elif ! [[ $3 =~ $nonNegativeInteger ]] && ! [[ -z $3 ]]; then
 	    echo;
 	    echo 'FATAL ERROR! The content to be inserted (initial value) is not a non-negative integer number. Script aborted';
 	    echo;
 	    return 1;
 	else
-	    valueToInsert=$3;
+	    # default value to insert is 1 if no third argument is entered
+	    if [[ -z $3 ]]; then
+		valueToInsert=1;
+	    else
+		valueToInsert=$3;
+	    fi
 	    echo '*********************************************' >> "$logFile";
 	    echo | tee -a "$logFile";
 	    date >> "$logFile";
