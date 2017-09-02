@@ -141,6 +141,46 @@ function renameTheFiles {
             echo >> "$logFile";
 	fi
 	;;
+    #prepend a positive number to each file name; number gets incremented before prepending to a new filename
+    -P)
+	if ! [[ $2 =~ $nonNegativeInteger ]] && ! [[ -z $2 ]]; then
+	    echo;
+	    echo 'FATAL ERROR! The content to be prepended (initial value) is not a non-negative integer number. Script aborted';
+	    echo;
+	    return 1;
+	else
+	    # default value to prepend is 1 if no second argument is entered
+	    if [[ -z $2 ]]; then
+		valueToPrepend=1;
+	    else
+		valueToPrepend=$2;
+	    fi
+            echo '*********************************************' >> "$logFile";
+            echo | tee -a "$logFile";
+            date >> "$logFile";
+            pwd >> "$logFile"
+            echo >> "$logFile";
+            echo 'Renaming files by prepending numeric content that is incremented before each new prepending...' | tee -a "$logFile";
+	    echo "Initial value: $valueToPrepend" | tee -a "$logFile";
+            echo | tee -a "$logFile";
+            while read input ; do
+		echo -n ": $input" | tee -a "$logFile";
+		newFilename="$valueToPrepend""$input";
+		# protect existing files from being overridden when renaming the current file
+		if [[ -e "$newFilename" ]]; then
+	            echo " ... ERROR! $newFilename already exists. Cannot rename $input." | tee -a "$logFile";
+		else
+	            mv "$input" "$newFilename";
+	            echo " ... renamed to $newFilename" | tee -a "$logFile";
+		fi
+		let "valueToPrepend=valueToPrepend+1"; #increment value to prepend no matter if actual one has been successfully prepended or not
+            done < "$tempFile"
+            echo | tee -a "$logFile";
+            echo 'Renaming files by prepending content finished.' | tee -a "$logFile";
+            echo | tee -a "$logFile";
+            echo >> "$logFile";
+	fi
+	;;
     #insert a sequence of characters to each file name starting with the given index (all existing characters starting with this index translated right)
     -i)
 	if [[ -z $2 ]]; then
