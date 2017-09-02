@@ -69,6 +69,46 @@ function renameTheFiles {
             echo >> "$logFile";
 	fi
 	;;
+    #append a positive number to each file name; the number gets incremented each time after a file is renamed
+    -A)
+	if ! [[ $2 =~ $nonNegativeInteger ]] && ! [[ -z $2 ]]; then
+	    echo;
+	    echo 'FATAL ERROR! The content to be appended (initial value) is not a non-negative integer number. Script aborted';
+            echo;
+	    return 1;
+	else
+	    # default value to append is 1 if no second argument is entered
+	    if [[ -z $2 ]]; then
+		valueToAppend=1;
+	    else
+		valueToAppend=$2;
+	    fi
+            echo '*********************************************' >> "$logFile";
+            echo | tee -a "$logFile";
+            date >> "$logFile";
+            pwd >> "$logFile"
+            echo >> "$logFile";
+            echo 'Renaming files by appending numeric content that is incremented before each new appending...' | tee -a "$logFile";
+	    echo "Initial value: $valueToAppend" | tee -a "$logFile";
+            echo | tee -a "$logFile";
+            while read input ; do
+		echo -n ": $input" | tee -a "$logFile";
+		newFilename="$input""$valueToAppend";
+		# protect existing files from being overridden when renaming the current file
+		if [[ -e "$newFilename" ]]; then
+	            echo " ... ERROR! $newFilename already exists. Cannot rename $input." | tee -a "$logFile";
+		else
+	            mv "$input" "$newFilename";
+	            echo " ... renamed to $newFilename" | tee -a "$logFile";
+		fi
+		let "valueToAppend=valueToAppend+1"; #increment value to append no matter if actual one has been successfully appended or not
+            done < "$tempFile"
+            echo | tee -a "$logFile";
+            echo 'Renaming files by appending content finished.' | tee -a "$logFile";
+            echo | tee -a "$logFile";
+            echo >> "$logFile";
+	fi
+	;;
     #prepend a sequence of characters to each file name
     -p)
 	if [[ -z $2 ]]; then
