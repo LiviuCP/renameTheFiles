@@ -338,6 +338,80 @@ function renameTheFiles {
 	    echo >> "$logFile";
 	fi
 	;;
+    #replace the substring from the filename with a positive number; number is incremented each time a new file follows (useful for re-numbering files)
+    -R)
+	if [[ -z $2 ]]; then
+	    echo;
+	    echo 'FATAL ERROR! No starting position for replacement entered. Script aborted';
+	    echo;
+	    return 1;
+	elif ! [[ $2 =~ $nonNegativeInteger ]]; then
+	    echo;
+	    echo 'FATAL ERROR! The position from which replacement begins is not a non-negative integer number. Script aborted';
+	    echo;
+	    return 1;
+	elif [[ -z $3 ]]; then
+	    echo;
+	    echo 'FATAL ERROR! No number of characters to be replaced has not been entered. Script aborted';
+	    echo;
+	    return 1;
+	elif ! [[ $3 =~ $nonNegativeInteger ]]; then
+	    echo;
+	    echo 'FATAL ERROR! The number of characters to replace is not a non-negative integer number. Script aborted';
+	    echo;
+	    return 1;
+	elif ! [[ $4 =~ $nonNegativeInteger ]] && ! [[ -z $4 ]]; then
+	    echo;
+	    echo 'FATAL ERROR! The replacing content (initial value) is not a non-negative integer number. Script aborted';
+	    echo;
+	    return 1;
+	else
+	    # default value used as replacement is 1 if no fourth argument is entered
+	    if [[ -z $4 ]]; then
+		replacementValue=1;
+	    else
+		replacementValue=$4;
+	    fi
+	    echo '*********************************************' >> "$logFile";
+	    echo | tee -a "$logFile";
+	    date >> "$logFile";
+	    pwd >> "$logFile"
+	    echo >> "$logFile";
+	    echo 'Renaming files by replacing content with a positive number that is incremented before each new replacement...' | tee -a "$logFile";
+	    echo "Initial value: $replacementValue" | tee -a "$logFile";
+	    echo | tee -a "$logFile";
+	    replacementIndex=$2;
+	    while read input; do
+		echo -n ": $input" | tee -a "$logFile";
+		length=${#input};
+		lastCharIndex=$(( length-1 ));
+		maxNrOfCharsToReplace=$(( length-replacementIndex )); #maximum number of characters that can be replaced starting the replacement index
+		#replacement index should not be higher than index of last character from the original string of the file name
+		if [[ $replacementIndex -gt $lastCharIndex ]]; then
+		    echo " ... ERROR! Replacement index out of range. Maximum allowed: $lastCharIndex. Cannot rename file." | tee -a "$logFile";
+		    #number of characters to be replaced should not be higher than the substring starting with the replacement index
+		elif [[ $3 -gt $maxNrOfCharsToReplace ]]; then
+		    echo " ... ERROR! You selected more characters to replace than allowed. Maximum allowed: $maxNrOfCharsToReplace. Cannot rename file." | tee -a "$logFile";
+		else
+		    leftPart=${input:0:$replacementIndex};
+		    rightPart=${input:$replacementIndex+$3};
+		    newFilename=$leftPart"$replacementValue"$rightPart;
+		    # protect existing files from being overridden when renaming the current file
+		    if [[ -e "$newFilename" ]]; then
+			echo " ... ERROR! $newFilename already exists. Cannot rename $input." | tee -a "$logFile";
+		    else
+			mv "$input" "$newFilename";
+			echo " ... renamed to $newFilename" | tee -a "$logFile";
+		    fi
+		fi
+		let "replacementValue=replacementValue+1"; #increment replacement value no matter if actual filename substring has been successfully replaced or not
+	    done < "$tempFile"
+	    echo | tee -a "$logFile";
+	    echo 'Renaming files by replacing content finished.' | tee -a "$logFile";
+	    echo | tee -a "$logFile";
+	    echo >> "$logFile";
+	fi
+	;;
     *)
 	echo;
 	echo 'FATAL ERROR! Invalid option selected. No such operation. Script aborted.';
