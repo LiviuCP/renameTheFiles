@@ -50,7 +50,8 @@ function renameTheFiles {
             date >> "$logFile";
             pwd >> "$logFile"
             echo >> "$logFile";
-            echo 'Renaming files by appending content...' | tee -a "$logFile";
+            echo 'Renaming files by appending text content...' | tee -a "$logFile";
+	    echo "Appended text: $2" | tee -a "$logFile";
             echo | tee -a "$logFile";
             while read input ; do
 		echo -n ": $input" | tee -a "$logFile";
@@ -89,7 +90,7 @@ function renameTheFiles {
             pwd >> "$logFile"
             echo >> "$logFile";
             echo 'Renaming files by appending numeric content that is incremented before each new appending...' | tee -a "$logFile";
-	    echo "Initial value: $valueToAppend" | tee -a "$logFile";
+	    echo "Initial appended value: $valueToAppend" | tee -a "$logFile";
             echo | tee -a "$logFile";
             while read input ; do
 		echo -n ": $input" | tee -a "$logFile";
@@ -122,8 +123,9 @@ function renameTheFiles {
             date >> "$logFile";
             pwd >> "$logFile"
             echo >> "$logFile";
-            echo 'Renaming files by prepending content...' | tee -a "$logFile";
-            echo | tee -a "$logFile";
+            echo 'Renaming files by prepending text content...' | tee -a "$logFile";
+	    echo "Prepended text: $2" | tee -a "$logFile";
+	    echo | tee -a "$logFile";
             while read input ; do
 		echo -n ": $input" | tee -a "$logFile";
 		newFilename="$2""$input";
@@ -161,7 +163,7 @@ function renameTheFiles {
             pwd >> "$logFile"
             echo >> "$logFile";
             echo 'Renaming files by prepending numeric content that is incremented before each new prepending...' | tee -a "$logFile";
-	    echo "Initial value: $valueToPrepend" | tee -a "$logFile";
+	    echo "Initial prepended value: $valueToPrepend" | tee -a "$logFile";
             echo | tee -a "$logFile";
             while read input ; do
 		echo -n ": $input" | tee -a "$logFile";
@@ -204,7 +206,9 @@ function renameTheFiles {
 	    date >> "$logFile";
 	    pwd >> "$logFile"
 	    echo >> "$logFile";
-	    echo 'Renaming files by inserting content...' | tee -a "$logFile";
+	    echo 'Renaming files by inserting text content...' | tee -a "$logFile";
+	    echo "Insertion position: $2" | tee -a "$logFile";
+	    echo "Insertion text: $3" | tee -a "$logFile";
 	    echo | tee -a "$logFile";
 	    insertionIndex=$2;
 	    while read input; do
@@ -261,8 +265,9 @@ function renameTheFiles {
 	    date >> "$logFile";
 	    pwd >> "$logFile"
 	    echo >> "$logFile";
-	    echo 'Renaming files by inserting numeric content and that is incremented before each new insertion...' | tee -a "$logFile";
-	    echo "Initial value: $valueToInsert" | tee -a "$logFile";
+	    echo 'Renaming files by inserting numeric content that is incremented before each new insertion...' | tee -a "$logFile";
+	    echo "Insertion position: $2" | tee -a "$logFile";
+	    echo "Initial insertion value: $valueToInsert" | tee -a "$logFile";
 	    echo | tee -a "$logFile";
 	    insertionIndex=$2;
 	    while read input; do
@@ -320,6 +325,8 @@ function renameTheFiles {
 	    pwd >> "$logFile"
 	    echo >> "$logFile";
 	    echo 'Renaming files by deleting content...' | tee -a "$logFile";
+	    echo "Deletion position: $2" | tee -a "$logFile";
+	    echo "Number of characters to delete: $3" | tee -a "$logFile";
 	    echo | tee -a "$logFile";
 	    deletionIndex=$2;
 	    while read input; do
@@ -385,7 +392,10 @@ function renameTheFiles {
 	    date >> "$logFile";
 	    pwd >> "$logFile"
 	    echo >> "$logFile";
-	    echo 'Renaming files by replacing content...' | tee -a "$logFile";
+	    echo 'Renaming files by replacing content with text...' | tee -a "$logFile";
+	    echo "Replacement position: $2" | tee -a "$logFile";
+	    echo "Number of characters to replace: $3" | tee -a "$logFile";
+	    echo "Replacement text: $4" | tee -a "$logFile";
 	    echo | tee -a "$logFile";
 	    replacementIndex=$2;
 	    while read input; do
@@ -458,7 +468,9 @@ function renameTheFiles {
 	    pwd >> "$logFile"
 	    echo >> "$logFile";
 	    echo 'Renaming files by replacing content with a positive number that is incremented before each new replacement...' | tee -a "$logFile";
-	    echo "Initial value: $replacementValue" | tee -a "$logFile";
+	    echo "Replacement position: $2" | tee -a "$logFile";
+	    echo "Number of characters to replace: $3" | tee -a "$logFile";
+	    echo "Initial replacement value: $replacementValue" | tee -a "$logFile";
 	    echo | tee -a "$logFile";
 	    replacementIndex=$2;
 	    while read input; do
