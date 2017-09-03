@@ -1,14 +1,32 @@
+# *** PLEASE READ BEFORE USING!!! ***
+# This file contains functions that are used for renaming files and checking/manipulating the rename log
+# In order to use it please include a source command in your .bashrc or .bash_profile file (depending on your configuration) that loads this file when the command terminal is launched
+# For example if this file is copied into the same directory as the configuration files mentioned above (which I recommend) you can include command: source ./renameFiles;
+# I recommend that you rename this file to a hidden one: .renameFiles
+
+
+
+
+
+
+# FUNCTIONS:
+
+
 # This function is used for renaming a batch of files in the same time
 # It is recommended that same-format files are used, e.g. DSC-XXXX, where XXXX is a number
-# The function has 5 operating modes at the moment:
-# - prepend (option -p)
-# - append (option -a)
-# - insert (option -i)
-# - delete (option -d)
-# - replace (option -r)
-# The actual file changes are logged in a file which can be manipulated using the renameFilesLog function
+# The function has 9 operating modes (options):
+# - prepend text (option -p): prepends the same text to each filename
+# - prepend numeric value (option -P): prepends a positive number to each filename, number gets incremented before renaming the next file
+# - append text (option -a): appends the same text to each filename
+# - append numeric value (option -A): appends a positive number to each filename, number gets incremented before renaming the next file
+# - insert text (option -i): inserts the same text to each filename starting with the given position
+# - insert numeric value (option -I): inserts a positive number to each filename, number gets incremented before renaming the next file
+# - delete (option -d): deletes the given number of characters from each filename starting with the given position
+# - replace with text (option -r): replaces the given number of characters from each filename (starting with the given position) with the same text
+# - replace with numeric value (option -R): replaces the given number of characters from each filename (starting with the given position) with a positive number, number gets incremented before renaming the next file
+# The actual file changes are logged in a file which can be manipulated using the renameFilesLog function (see below)
 # for further details type renameFiles without arguments
-function renameTheFiles {
+function renameFiles {
     tempFile=~/.renameScriptTempFile; #file used for listing files to be renamed
     logFile=~/.renameLog; #file used for logging rename operations so they can be reviewed later
     nonNegativeInteger='^[0-9]+$'; #regex used for testing if the argument is a number
@@ -18,20 +36,29 @@ function renameTheFiles {
 	echo;
 	echo 'Usage: ';
 	echo;
-	echo 'Option -a: append string to file name';
-	echo 'Option -p: prepend string to file name';
-	echo 'Option -i: insert string into file name';
+	echo 'Option -a: append text to file name';
+	echo 'Option -A: append numeric value to file name';
+	echo 'Option -p: prepend text to file name';
+	echo 'Option -P: prepend numeric value to file name';
+	echo 'Option -i: insert text into file name';
+	echo 'Option -I: insert numeric value into file name';
 	echo 'Option -d: delete substring from file name';
-	echo 'Option -r: replace substring from file name';
+	echo 'Option -r: replace text from file name with text';
+	echo 'Option -R: replace text from file name with numeric value';
 	echo;
 	echo 'Required arguments:';
 	echo '[-a] [string-to-append]';
+	echo '[-A] [[initial-number-to-append]]';
 	echo '[-p] [string-to-prepend]';
-	echo '[-i] [position-of-first-inserted-character] [string-to-insert]';
+	echo '[-P] [[initial-number-to-prepend]]';
+	echo '[-i] [insertion-starting-position] [string-to-insert]';
+	echo '[-I] [insertion-starting-position] [[initial-number-to-insert]]';
 	echo '[-d] [starting-index-of-substring-to-delete] [number-of-characters-to-delete]';
-	echo '[-r] [starting-index-of-substring-to-replace] [number-of-characters-to-replace] [replacing-string]';
+	echo '[-r] [starting-position-of-substring-to-replace] [number-of-characters-to-replace] [replacement-string]';
+	echo '[-R] [starting-position-of-substring-to-replace] [number-of-characters-to-replace] [[initial-replacement-number]]';
 	echo;
-	echo 'Note: index of first character of file name string is 0.';
+	echo 'Position of first character in a file name string is 0.';
+	echo 'The arguments between [[]] are optional (default value 1 assumed if nothing is entered).';
 	echo;
 	return 0;
     fi
