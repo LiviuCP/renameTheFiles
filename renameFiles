@@ -440,9 +440,11 @@ function renameFiles {
 		    leftPart=${input:0:$replacementIndex};
 		    rightPart=${input:$replacementIndex+$3};
 		    newFilename=$leftPart"$4"$rightPart;
-		    # protect existing files from being overridden when renaming the current file
-		    if [[ -e "$newFilename" ]]; then
-			echo " ... ERROR! $newFilename already exists. Cannot rename $input." | tee -a "$logFile";
+		    oldFilenameLowerCase=$(tr '[A-Z]' '[a-z]' <<< $input);
+		    newFilenameLowerCase=$(tr '[A-Z]' '[a-z]' <<< $newFilename);
+		    # protect existing files from being overridden when renaming the current file (exclude case-only changes)
+		    if [[ -e "$newFilename"  ]] && [[ "$oldFilenameLowerCase" != "$newFilenameLowerCase" ]]; then
+		        echo " ... ERROR! $newFilename already exists. Cannot rename $input." | tee -a "$logFile";
 		    else
 			mv "$input" "$newFilename";
 			echo " ... renamed to $newFilename" | tee -a "$logFile";
