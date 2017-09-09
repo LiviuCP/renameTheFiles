@@ -1,12 +1,30 @@
+# *** PLEASE READ BEFORE USING!!! ***
+# This file contains functions that are used for renaming files and checking/manipulating the rename log
+# In order to use it please include a source command in your .bashrc or .bash_profile file (depending on your configuration) that loads this file when the command terminal is launched
+# For example if this file is copied into the same directory as the configuration files mentioned above (which I recommend) you can include command: source ./renameFiles;
+# I recommend that you rename this file to a hidden one: .renameFiles
+
+
+
+
+
+
+# FUNCTIONS:
+
+
 # This function is used for renaming a batch of files in the same time
 # It is recommended that same-format files are used, e.g. DSC-XXXX, where XXXX is a number
-# The function has 5 operating modes at the moment:
-# - prepend (option -p)
-# - append (option -a)
-# - insert (option -i)
-# - delete (option -d)
-# - replace (option -r)
-# The actual file changes are logged in a file which can be manipulated using the renameFilesLog function
+# The function has 9 operating modes (options):
+# - prepend text (option -p): prepends the same text to each filename
+# - prepend numeric value (option -P): prepends a positive number to each filename, number gets incremented before renaming the next file
+# - append text (option -a): appends the same text to each filename
+# - append numeric value (option -A): appends a positive number to each filename, number gets incremented before renaming the next file
+# - insert text (option -i): inserts the same text to each filename starting with the given position
+# - insert numeric value (option -I): inserts a positive number to each filename, number gets incremented before renaming the next file
+# - delete (option -d): deletes the given number of characters from each filename starting with the given position
+# - replace with text (option -r): replaces the given number of characters from each filename (starting with the given position) with the same text
+# - replace with numeric value (option -R): replaces the given number of characters from each filename (starting with the given position) with a positive number, number gets incremented before renaming the next file
+# The actual file changes are logged in a file which can be manipulated using the renameFilesLog function (see below)
 # for further details type renameFiles without arguments
 function renameFiles {
     tempFile=~/.renameScriptTempFile; #file used for listing files to be renamed
@@ -18,20 +36,29 @@ function renameFiles {
 	echo;
 	echo 'Usage: ';
 	echo;
-	echo 'Option -a: append string to file name';
-	echo 'Option -p: prepend string to file name';
-	echo 'Option -i: insert string into file name';
+	echo 'Option -a: append text to file name';
+	echo 'Option -A: append numeric value to file name';
+	echo 'Option -p: prepend text to file name';
+	echo 'Option -P: prepend numeric value to file name';
+	echo 'Option -i: insert text into file name';
+	echo 'Option -I: insert numeric value into file name';
 	echo 'Option -d: delete substring from file name';
-	echo 'Option -r: replace substring from file name';
+	echo 'Option -r: replace text from file name with text';
+	echo 'Option -R: replace text from file name with numeric value';
 	echo;
 	echo 'Required arguments:';
 	echo '[-a] [string-to-append]';
+	echo '[-A] [[initial-number-to-append]]';
 	echo '[-p] [string-to-prepend]';
-	echo '[-i] [position-of-first-inserted-character] [string-to-insert]';
+	echo '[-P] [[initial-number-to-prepend]]';
+	echo '[-i] [insertion-starting-position] [string-to-insert]';
+	echo '[-I] [insertion-starting-position] [[initial-number-to-insert]]';
 	echo '[-d] [starting-index-of-substring-to-delete] [number-of-characters-to-delete]';
-	echo '[-r] [starting-index-of-substring-to-replace] [number-of-characters-to-replace] [replacing-string]';
+	echo '[-r] [starting-position-of-substring-to-replace] [number-of-characters-to-replace] [replacement-string]';
+	echo '[-R] [starting-position-of-substring-to-replace] [number-of-characters-to-replace] [[initial-replacement-number]]';
 	echo;
-	echo 'Note: index of first character of file name string is 0.';
+	echo 'Position of first character in a file name string is 0.';
+	echo 'The arguments between [[]] are optional (default value 1 assumed if nothing is entered).';
 	echo;
 	return 0;
     fi
@@ -50,7 +77,8 @@ function renameFiles {
             date >> "$logFile";
             pwd >> "$logFile"
             echo >> "$logFile";
-            echo 'Renaming files by appending content...' | tee -a "$logFile";
+            echo 'Renaming files by appending text content...' | tee -a "$logFile";
+	    echo "Appended text: $2" | tee -a "$logFile";
             echo | tee -a "$logFile";
             while read input ; do
 		echo -n ": $input" | tee -a "$logFile";
@@ -62,6 +90,46 @@ function renameFiles {
 	            mv "$input" "$newFilename";
 	            echo " ... renamed to $newFilename" | tee -a "$logFile";
 		fi
+            done < "$tempFile"
+            echo | tee -a "$logFile";
+            echo 'Renaming files by appending content finished.' | tee -a "$logFile";
+            echo | tee -a "$logFile";
+            echo >> "$logFile";
+	fi
+	;;
+    #append a positive number to each file name; the number gets incremented each time after a file is renamed
+    -A)
+	if ! [[ $2 =~ $nonNegativeInteger ]] && ! [[ -z $2 ]]; then
+	    echo;
+	    echo 'FATAL ERROR! The content to be appended (initial value) is not a non-negative integer number. Script aborted';
+            echo;
+	    return 1;
+	else
+	    # default value to append is 1 if no second argument is entered
+	    if [[ -z $2 ]]; then
+		valueToAppend=1;
+	    else
+		valueToAppend=$2;
+	    fi
+            echo '*********************************************' >> "$logFile";
+            echo | tee -a "$logFile";
+            date >> "$logFile";
+            pwd >> "$logFile"
+            echo >> "$logFile";
+            echo 'Renaming files by appending numeric content that is incremented before each new appending...' | tee -a "$logFile";
+	    echo "Initial appended value: $valueToAppend" | tee -a "$logFile";
+            echo | tee -a "$logFile";
+            while read input ; do
+		echo -n ": $input" | tee -a "$logFile";
+		newFilename="$input""$valueToAppend";
+		# protect existing files from being overridden when renaming the current file
+		if [[ -e "$newFilename" ]]; then
+	            echo " ... ERROR! $newFilename already exists. Cannot rename $input." | tee -a "$logFile";
+		else
+	            mv "$input" "$newFilename";
+	            echo " ... renamed to $newFilename" | tee -a "$logFile";
+		fi
+		let "valueToAppend=valueToAppend+1"; #increment value to append no matter if actual one has been successfully appended or not
             done < "$tempFile"
             echo | tee -a "$logFile";
             echo 'Renaming files by appending content finished.' | tee -a "$logFile";
@@ -82,8 +150,9 @@ function renameFiles {
             date >> "$logFile";
             pwd >> "$logFile"
             echo >> "$logFile";
-            echo 'Renaming files by prepending content...' | tee -a "$logFile";
-            echo | tee -a "$logFile";
+            echo 'Renaming files by prepending text content...' | tee -a "$logFile";
+	    echo "Prepended text: $2" | tee -a "$logFile";
+	    echo | tee -a "$logFile";
             while read input ; do
 		echo -n ": $input" | tee -a "$logFile";
 		newFilename="$2""$input";
@@ -94,6 +163,46 @@ function renameFiles {
 	            mv "$input" "$newFilename";
 	            echo " ... renamed to $newFilename" | tee -a "$logFile";
 		fi
+            done < "$tempFile"
+            echo | tee -a "$logFile";
+            echo 'Renaming files by prepending content finished.' | tee -a "$logFile";
+            echo | tee -a "$logFile";
+            echo >> "$logFile";
+	fi
+	;;
+    #prepend a positive number to each file name; number gets incremented before prepending to a new filename
+    -P)
+	if ! [[ $2 =~ $nonNegativeInteger ]] && ! [[ -z $2 ]]; then
+	    echo;
+	    echo 'FATAL ERROR! The content to be prepended (initial value) is not a non-negative integer number. Script aborted';
+	    echo;
+	    return 1;
+	else
+	    # default value to prepend is 1 if no second argument is entered
+	    if [[ -z $2 ]]; then
+		valueToPrepend=1;
+	    else
+		valueToPrepend=$2;
+	    fi
+            echo '*********************************************' >> "$logFile";
+            echo | tee -a "$logFile";
+            date >> "$logFile";
+            pwd >> "$logFile"
+            echo >> "$logFile";
+            echo 'Renaming files by prepending numeric content that is incremented before each new prepending...' | tee -a "$logFile";
+	    echo "Initial prepended value: $valueToPrepend" | tee -a "$logFile";
+            echo | tee -a "$logFile";
+            while read input ; do
+		echo -n ": $input" | tee -a "$logFile";
+		newFilename="$valueToPrepend""$input";
+		# protect existing files from being overridden when renaming the current file
+		if [[ -e "$newFilename" ]]; then
+	            echo " ... ERROR! $newFilename already exists. Cannot rename $input." | tee -a "$logFile";
+		else
+	            mv "$input" "$newFilename";
+	            echo " ... renamed to $newFilename" | tee -a "$logFile";
+		fi
+		let "valueToPrepend=valueToPrepend+1"; #increment value to prepend no matter if actual one has been successfully prepended or not
             done < "$tempFile"
             echo | tee -a "$logFile";
             echo 'Renaming files by prepending content finished.' | tee -a "$logFile";
@@ -124,7 +233,9 @@ function renameFiles {
 	    date >> "$logFile";
 	    pwd >> "$logFile"
 	    echo >> "$logFile";
-	    echo 'Renaming files by inserting content...' | tee -a "$logFile";
+	    echo 'Renaming files by inserting text content...' | tee -a "$logFile";
+	    echo "Insertion position: $2" | tee -a "$logFile";
+	    echo "Insertion text: $3" | tee -a "$logFile";
 	    echo | tee -a "$logFile";
 	    insertionIndex=$2;
 	    while read input; do
@@ -145,6 +256,66 @@ function renameFiles {
 			echo " ... renamed to $newFilename" | tee -a "$logFile";
 		    fi
 		fi
+	    done < "$tempFile"
+	    echo | tee -a "$logFile";
+	    echo 'Renaming files by inserting content finished.' | tee -a "$logFile";
+	    echo | tee -a "$logFile";
+	    echo >> "$logFile";
+	fi
+	;;
+    #insert a positive number into the filename, number is incremented each time a new file follows (useful for numbering files)
+    -I)
+	if [[ -z $2 ]]; then
+	    echo;
+	    echo 'FATAL ERROR! No insertion position entered. Script aborted.';
+	    echo;
+	    return 1;
+	elif ! [[ $2 =~ $nonNegativeInteger ]]; then
+	    echo;
+	    echo 'FATAL ERROR! The insertion position is not a non-negative integer number. Script aborted';
+	    echo;
+	    return 1;
+	elif ! [[ $3 =~ $nonNegativeInteger ]] && ! [[ -z $3 ]]; then
+	    echo;
+	    echo 'FATAL ERROR! The content to be inserted (initial value) is not a non-negative integer number. Script aborted';
+	    echo;
+	    return 1;
+	else
+	    # default value to insert is 1 if no third argument is entered
+	    if [[ -z $3 ]]; then
+		valueToInsert=1;
+	    else
+		valueToInsert=$3;
+	    fi
+	    echo '*********************************************' >> "$logFile";
+	    echo | tee -a "$logFile";
+	    date >> "$logFile";
+	    pwd >> "$logFile"
+	    echo >> "$logFile";
+	    echo 'Renaming files by inserting numeric content that is incremented before each new insertion...' | tee -a "$logFile";
+	    echo "Insertion position: $2" | tee -a "$logFile";
+	    echo "Initial insertion value: $valueToInsert" | tee -a "$logFile";
+	    echo | tee -a "$logFile";
+	    insertionIndex=$2;
+	    while read input; do
+		echo -n ": $input" | tee -a "$logFile";
+		#insertion index should not be higher than the one of the first character to be inserted after end of original file name string
+		length=${#input};
+		if [[ $insertionIndex -gt $length ]]; then
+	            echo " ... ERROR! Insertion index out of range. Maximum allowed: $length. Cannot rename file." | tee -a "$logFile";
+		else
+		    leftPart=${input:0:$insertionIndex};
+		    rightPart=${input:$insertionIndex};
+		    newFilename=$leftPart"$valueToInsert"$rightPart;
+		    # protect existing files from being overridden when renaming the current file
+		    if [[ -e "$newFilename" ]]; then
+			echo " ... ERROR! $newFilename already exists. Cannot rename $input." | tee -a "$logFile";
+		    else
+			mv "$input" "$newFilename";
+			echo " ... renamed to $newFilename" | tee -a "$logFile";
+		    fi
+		fi
+		let "valueToInsert=valueToInsert+1"; #increment value to insert no matter if actual one has been successfully inserted or not
 	    done < "$tempFile"
 	    echo | tee -a "$logFile";
 	    echo 'Renaming files by inserting content finished.' | tee -a "$logFile";
@@ -181,6 +352,8 @@ function renameFiles {
 	    pwd >> "$logFile"
 	    echo >> "$logFile";
 	    echo 'Renaming files by deleting content...' | tee -a "$logFile";
+	    echo "Deletion position: $2" | tee -a "$logFile";
+	    echo "Number of characters to delete: $3" | tee -a "$logFile";
 	    echo | tee -a "$logFile";
 	    deletionIndex=$2;
 	    while read input; do
@@ -246,7 +419,10 @@ function renameFiles {
 	    date >> "$logFile";
 	    pwd >> "$logFile"
 	    echo >> "$logFile";
-	    echo 'Renaming files by replacing content...' | tee -a "$logFile";
+	    echo 'Renaming files by replacing content with text...' | tee -a "$logFile";
+	    echo "Replacement position: $2" | tee -a "$logFile";
+	    echo "Number of characters to replace: $3" | tee -a "$logFile";
+	    echo "Replacement text: $4" | tee -a "$logFile";
 	    echo | tee -a "$logFile";
 	    replacementIndex=$2;
 	    while read input; do
@@ -272,6 +448,82 @@ function renameFiles {
 			echo " ... renamed to $newFilename" | tee -a "$logFile";
 		    fi
 		fi
+	    done < "$tempFile"
+	    echo | tee -a "$logFile";
+	    echo 'Renaming files by replacing content finished.' | tee -a "$logFile";
+	    echo | tee -a "$logFile";
+	    echo >> "$logFile";
+	fi
+	;;
+    #replace the substring from the filename with a positive number; number is incremented each time a new file follows (useful for re-numbering files)
+    -R)
+	if [[ -z $2 ]]; then
+	    echo;
+	    echo 'FATAL ERROR! No starting position for replacement entered. Script aborted';
+	    echo;
+	    return 1;
+	elif ! [[ $2 =~ $nonNegativeInteger ]]; then
+	    echo;
+	    echo 'FATAL ERROR! The position from which replacement begins is not a non-negative integer number. Script aborted';
+	    echo;
+	    return 1;
+	elif [[ -z $3 ]]; then
+	    echo;
+	    echo 'FATAL ERROR! No number of characters to be replaced has not been entered. Script aborted';
+	    echo;
+	    return 1;
+	elif ! [[ $3 =~ $nonNegativeInteger ]]; then
+	    echo;
+	    echo 'FATAL ERROR! The number of characters to replace is not a non-negative integer number. Script aborted';
+	    echo;
+	    return 1;
+	elif ! [[ $4 =~ $nonNegativeInteger ]] && ! [[ -z $4 ]]; then
+	    echo;
+	    echo 'FATAL ERROR! The replacing content (initial value) is not a non-negative integer number. Script aborted';
+	    echo;
+	    return 1;
+	else
+	    # default value used as replacement is 1 if no fourth argument is entered
+	    if [[ -z $4 ]]; then
+		replacementValue=1;
+	    else
+		replacementValue=$4;
+	    fi
+	    echo '*********************************************' >> "$logFile";
+	    echo | tee -a "$logFile";
+	    date >> "$logFile";
+	    pwd >> "$logFile"
+	    echo >> "$logFile";
+	    echo 'Renaming files by replacing content with a positive number that is incremented before each new replacement...' | tee -a "$logFile";
+	    echo "Replacement position: $2" | tee -a "$logFile";
+	    echo "Number of characters to replace: $3" | tee -a "$logFile";
+	    echo "Initial replacement value: $replacementValue" | tee -a "$logFile";
+	    echo | tee -a "$logFile";
+	    replacementIndex=$2;
+	    while read input; do
+		echo -n ": $input" | tee -a "$logFile";
+		length=${#input};
+		lastCharIndex=$(( length-1 ));
+		maxNrOfCharsToReplace=$(( length-replacementIndex )); #maximum number of characters that can be replaced starting the replacement index
+		#replacement index should not be higher than index of last character from the original string of the file name
+		if [[ $replacementIndex -gt $lastCharIndex ]]; then
+		    echo " ... ERROR! Replacement index out of range. Maximum allowed: $lastCharIndex. Cannot rename file." | tee -a "$logFile";
+		    #number of characters to be replaced should not be higher than the substring starting with the replacement index
+		elif [[ $3 -gt $maxNrOfCharsToReplace ]]; then
+		    echo " ... ERROR! You selected more characters to replace than allowed. Maximum allowed: $maxNrOfCharsToReplace. Cannot rename file." | tee -a "$logFile";
+		else
+		    leftPart=${input:0:$replacementIndex};
+		    rightPart=${input:$replacementIndex+$3};
+		    newFilename=$leftPart"$replacementValue"$rightPart;
+		    # protect existing files from being overridden when renaming the current file
+		    if [[ -e "$newFilename" ]]; then
+			echo " ... ERROR! $newFilename already exists. Cannot rename $input." | tee -a "$logFile";
+		    else
+			mv "$input" "$newFilename";
+			echo " ... renamed to $newFilename" | tee -a "$logFile";
+		    fi
+		fi
+		let "replacementValue=replacementValue+1"; #increment replacement value no matter if actual filename substring has been successfully replaced or not
 	    done < "$tempFile"
 	    echo | tee -a "$logFile";
 	    echo 'Renaming files by replacing content finished.' | tee -a "$logFile";
